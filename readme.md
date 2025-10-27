@@ -1,11 +1,11 @@
-# `console` — Минималистичный CLI-фреймворк для Go-приложений
+# `cli` — Минималистичный CLI-фреймворк для Go-приложений
 
 [![Go CI](https://github.com/shuldan/cli/workflows/Go%20CI/badge.svg)](https://github.com/shuldan/cli/actions)
 [![codecov](https://codecov.io/gh/shuldan/cli/branch/main/graph/badge.svg)](https://codecov.io/gh/shuldan/cli)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shuldan/cli)](https://goreportcard.com/report/github.com/shuldan/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Пакет `console` предоставляет простой, но расширяемый каркас для создания консольных утилит на Go с поддержкой регистрации команд, автоматической генерацией справки и безопасным выполнением.
+Пакет `cli` предоставляет простой, но расширяемый каркас для создания консольных утилит на Go с поддержкой регистрации команд, автоматической генерацией справки и безопасным выполнением.
 
 ---
 
@@ -82,14 +82,14 @@ make test-coverage
 
 ## 🧱 Архитектура
 
-### `Console`
+### `cli`
 
 Основной объект CLI-приложения:
 
 ```go
-cli := console.New()
-err := cli.Register(&MyCommand{})
-err = cli.Run(ctx, os.Stdin, os.Stdout, os.Args[1:])
+c := cli.New()
+err := c.Register(&MyCommand{})
+err = c.Run(ctx, os.Stdin, os.Stdout, os.Args[1:])
 ```
 
 ### `Command`
@@ -106,7 +106,7 @@ type Command interface {
 }
 ```
 
-Команда `help` регистрируется автоматически при создании `Console`.
+Команда `help` регистрируется автоматически при создании `cli`.
 
 ---
 
@@ -122,7 +122,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/shuldan/cli/pkg/console"
+	"github.com/shuldan/cli"
 )
 
 type GreetCommand struct {
@@ -143,13 +143,13 @@ func (g *GreetCommand) Execute(_ context.Context, _ io.Reader, w io.Writer, _ []
 }
 
 func main() {
-	cli := console.New()
-	if err := cli.Register(&GreetCommand{}); err != nil {
+	c := cli.New()
+	if err := c.Register(&GreetCommand{}); err != nil {
 		panic(err)
 	}
 
 	ctx := context.Background()
-	if err := cli.Run(ctx, os.Stdin, os.Stdout, os.Args[1:]); err != nil {
+	if err := c.Run(ctx, os.Stdin, os.Stdout, os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -179,5 +179,5 @@ PR и issue приветствуются! Следуйте стандартам 
 
 > **Автор**: MSeytumerov  
 > **Репозиторий**: `github.com/shuldan/cli`  
-> **Пакет**: `github.com/shuldan/cli/pkg/console`  
+> **Пакет**: `github.com/shuldan/cli`  
 > **Go**: `1.24.2`
