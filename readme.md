@@ -1,8 +1,8 @@
 # `console` — Минималистичный CLI-фреймворк для Go-приложений
 
-[![Go CI](https://github.com/shuldan/app/workflows/Go%20CI/badge.svg)](https://github.com/shuldan/app/actions)
-[![codecov](https://codecov.io/gh/shuldan/app/branch/main/graph/badge.svg)](https://codecov.io/gh/shuldan/app)
-[![Go Report Card](https://goreportcard.com/badge/github.com/shuldan/app)](https://goreportcard.com/report/github.com/shuldan/app)
+[![Go CI](https://github.com/shuldan/cli/workflows/Go%20CI/badge.svg)](https://github.com/shuldan/cli/actions)
+[![codecov](https://codecov.io/gh/shuldan/cli/branch/main/graph/badge.svg)](https://codecov.io/gh/shuldan/cli)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shuldan/cli)](https://goreportcard.com/report/github.com/shuldan/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Пакет `console` предоставляет простой, но расширяемый каркас для создания консольных утилит на Go с поддержкой регистрации команд, автоматической генерацией справки и безопасным выполнением.
@@ -122,7 +122,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/shuldan/app/cli/pkg/console"
+	"github.com/shuldan/cli/pkg/console"
 )
 
 type GreetCommand struct {
@@ -178,6 +178,6 @@ PR и issue приветствуются! Следуйте стандартам 
 ---
 
 > **Автор**: MSeytumerov  
-> **Репозиторий**: `github.com/shuldan/app`  
-> **Пакет**: `github.com/shuldan/app/cli/pkg/console`  
+> **Репозиторий**: `github.com/shuldan/cli`  
+> **Пакет**: `github.com/shuldan/cli/pkg/console`  
 > **Go**: `1.24.2`
