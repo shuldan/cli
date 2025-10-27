@@ -1,8 +1,8 @@
 # `console` — Минималистичный CLI-фреймворк для Go-приложений
 
-[![Go CI](https://github.com/shuldan/app/workflows/Go%20CI/badge.svg)](https://github.com/shuldan/app/actions)  
-[![codecov](https://codecov.io/gh/shuldan/app/branch/main/graph/badge.svg)](https://codecov.io/gh/shuldan/app)  
-[![Go Report Card](https://goreportcard.com/badge/github.com/shuldan/app)](https://goreportcard.com/report/github.com/shuldan/app)  
+[![Go CI](https://github.com/shuldan/app/workflows/Go%20CI/badge.svg)](https://github.com/shuldan/app/actions)
+[![codecov](https://codecov.io/gh/shuldan/app/branch/main/graph/badge.svg)](https://codecov.io/gh/shuldan/app)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shuldan/app)](https://goreportcard.com/report/github.com/shuldan/app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Пакет `console` предоставляет простой, но расширяемый каркас для создания консольных утилит на Go с поддержкой регистрации команд, автоматической генерацией справки и безопасным выполнением.
