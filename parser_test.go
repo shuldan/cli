@@ -19,8 +19,8 @@ func TestParser_Parse_EmptyArgs(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-	if result.Command.Name() != "help" {
-		t.Errorf("expected help, got %s", result.Command.Name())
+	if result.Command.Name() != cmdNameHelp {
+		t.Errorf("expected %s, got %s", cmdNameHelp, result.Command.Name())
 	}
 }
 
@@ -41,8 +41,8 @@ func TestParser_Parse_HelpFlags(t *testing.T) {
 			if err != nil {
 				t.Errorf("expected no error, got %v", err)
 			}
-			if result.Command.Name() != "help" {
-				t.Errorf("expected help, got %s", result.Command.Name())
+			if result.Command.Name() != cmdNameHelp {
+				t.Errorf("expected %s, got %s", cmdNameHelp, result.Command.Name())
 			}
 		})
 	}
@@ -66,8 +66,8 @@ func TestParser_Parse_VersionFlags(t *testing.T) {
 			if err != nil {
 				t.Errorf("expected no error, got %v", err)
 			}
-			if result.Command.Name() != "version" {
-				t.Errorf("expected version, got %s", result.Command.Name())
+			if result.Command.Name() != cmdNameVersion {
+				t.Errorf("expected %s, got %s", cmdNameVersion, result.Command.Name())
 			}
 		})
 	}
@@ -108,7 +108,7 @@ func TestParser_Parse_CommandWithArgs(t *testing.T) {
 	}
 }
 
-func TestParser_Parse_WithOptions(t *testing.T) {
+func TestParser_Parse_WithAllOptionTypes(t *testing.T) {
 	t.Parallel()
 	p, reg := setupParserWithHelp()
 	cmd := &mockCommand{
@@ -120,7 +120,8 @@ func TestParser_Parse_WithOptions(t *testing.T) {
 		},
 	}
 	_ = reg.register(cmd)
-	result, err := p.parse(&bytes.Buffer{}, []string{"cmd", "--output=file", "-c", "5", "-V"})
+	args := []string{"cmd", "--output=file", "-c", "5", "-V"}
+	result, err := p.parse(&bytes.Buffer{}, args)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -184,62 +185,48 @@ func TestParser_Parse_OptionalArgDefault(t *testing.T) {
 	}
 }
 
-func TestParser_BindOptions_InvalidDefaultString(t *testing.T) {
+func TestParser_BindOptions_InvalidDefaults(t *testing.T) {
 	t.Parallel()
-	p, reg := setupParserWithHelp()
-	cmd := &mockCommand{
-		name:    "cmd",
-		options: []Option{{Name: "x", Type: OptionTypeString, Default: 123}},
+	tests := []struct {
+		name    string
+		opt     Option
+		errPart string
+	}{
+		{
+			"string wrong default",
+			Option{Name: "x", Type: OptionTypeString, Default: 123},
+			"not a string",
+		},
+		{
+			"int wrong default",
+			Option{Name: "x", Type: OptionTypeInt, Default: "bad"},
+			"not an int",
+		},
+		{
+			"bool wrong default",
+			Option{Name: "x", Type: OptionTypeBool, Default: "bad"},
+			"not a bool",
+		},
+		{
+			"unsupported type",
+			Option{Name: "x", Type: OptionType(99), Default: nil},
+			"unsupported",
+		},
 	}
-	_ = reg.register(cmd)
-	_, err := p.parse(&bytes.Buffer{}, []string{"cmd"})
-	if err == nil {
-		t.Errorf("expected error, got nil")
-	}
-	if !strings.Contains(err.Error(), "not a string") {
-		t.Errorf("expected 'not a string', got %q", err.Error())
-	}
-}
-
-func TestParser_BindOptions_InvalidDefaultInt(t *testing.T) {
-	t.Parallel()
-	p, reg := setupParserWithHelp()
-	cmd := &mockCommand{
-		name:    "cmd",
-		options: []Option{{Name: "x", Type: OptionTypeInt, Default: "bad"}},
-	}
-	_ = reg.register(cmd)
-	_, err := p.parse(&bytes.Buffer{}, []string{"cmd"})
-	if err == nil {
-		t.Errorf("expected error, got nil")
-	}
-}
-
-func TestParser_BindOptions_InvalidDefaultBool(t *testing.T) {
-	t.Parallel()
-	p, reg := setupParserWithHelp()
-	cmd := &mockCommand{
-		name:    "cmd",
-		options: []Option{{Name: "x", Type: OptionTypeBool, Default: "bad"}},
-	}
-	_ = reg.register(cmd)
-	_, err := p.parse(&bytes.Buffer{}, []string{"cmd"})
-	if err == nil {
-		t.Errorf("expected error, got nil")
-	}
-}
-
-func TestParser_BindOptions_UnsupportedType(t *testing.T) {
-	t.Parallel()
-	p, reg := setupParserWithHelp()
-	cmd := &mockCommand{
-		name:    "cmd",
-		options: []Option{{Name: "x", Type: OptionType(99), Default: nil}},
-	}
-	_ = reg.register(cmd)
-	_, err := p.parse(&bytes.Buffer{}, []string{"cmd"})
-	if err == nil {
-		t.Errorf("expected error, got nil")
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			p, reg := setupParserWithHelp()
+			cmd := &mockCommand{name: "cmd" + tc.name, options: []Option{tc.opt}}
+			_ = reg.register(cmd)
+			_, err := p.parse(&bytes.Buffer{}, []string{"cmd" + tc.name})
+			if err == nil {
+				t.Errorf("expected error, got nil")
+			}
+			if !strings.Contains(err.Error(), tc.errPart) {
+				t.Errorf("expected %q in error, got %q", tc.errPart, err.Error())
+			}
+		})
 	}
 }
 
@@ -251,24 +238,16 @@ func TestParser_CollectOptions_WrongPointerTypes(t *testing.T) {
 		{Name: "i", Type: OptionTypeInt},
 		{Name: "b", Type: OptionTypeBool},
 	}
-	pointers := map[string]any{
-		"s": 123,
-		"i": "wrong",
-		"b": 42,
-	}
+	pointers := map[string]any{"s": 123, "i": "wrong", "b": 42}
 	result := p.collectOptions(options, pointers)
-	if _, ok := result["s"]; ok {
-		t.Errorf("expected no string result for wrong pointer type")
-	}
-	if _, ok := result["i"]; ok {
-		t.Errorf("expected no int result for wrong pointer type")
-	}
-	if _, ok := result["b"]; ok {
-		t.Errorf("expected no bool result for wrong pointer type")
+	for _, key := range []string{"s", "i", "b"} {
+		if _, ok := result[key]; ok {
+			t.Errorf("expected no result for %q with wrong pointer type", key)
+		}
 	}
 }
 
-func TestParser_BuildHelpParsed_NoHelpRegistered(t *testing.T) {
+func TestParser_BuildHelpParsed_NoHelp(t *testing.T) {
 	t.Parallel()
 	reg := newTestRegistry()
 	p := newTestParser(reg)

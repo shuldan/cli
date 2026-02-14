@@ -17,10 +17,10 @@ func TestNew_Defaults(t *testing.T) {
 	if c.version != "" {
 		t.Errorf("expected empty version, got %q", c.version)
 	}
-	if _, ok := c.registry.get("help"); !ok {
+	if _, ok := c.registry.get(cmdNameHelp); !ok {
 		t.Errorf("expected help command to be registered")
 	}
-	if _, ok := c.registry.get("version"); ok {
+	if _, ok := c.registry.get(cmdNameVersion); ok {
 		t.Errorf("expected version command NOT to be registered")
 	}
 }
@@ -35,7 +35,7 @@ func TestNew_WithOptions(t *testing.T) {
 	if c.version != "1.0" {
 		t.Errorf("expected version %q, got %q", "1.0", c.version)
 	}
-	if _, ok := c.registry.get("version"); !ok {
+	if _, ok := c.registry.get(cmdNameVersion); !ok {
 		t.Errorf("expected version command to be registered")
 	}
 	if len(c.middleware) != 1 {
@@ -85,7 +85,7 @@ func TestConsole_Run_Success(t *testing.T) {
 	}
 }
 
-func TestConsole_mustRegister_Panic(t *testing.T) {
+func TestConsole_MustRegister_Panic(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		r := recover()

@@ -74,6 +74,14 @@ func TestCommandNotFoundError_Error(t *testing.T) {
 	}
 }
 
+func TestCommandNotFoundError_ExitCode(t *testing.T) {
+	t.Parallel()
+	e := &CommandNotFoundError{Name: "foo"}
+	if e.ExitCode() != ExitUsageError {
+		t.Errorf("expected %d, got %d", ExitUsageError, e.ExitCode())
+	}
+}
+
 func TestCommandExistsError_Error(t *testing.T) {
 	t.Parallel()
 	e := &CommandExistsError{Name: "bar"}
@@ -92,6 +100,14 @@ func TestMissingArgumentError_Error(t *testing.T) {
 	}
 }
 
+func TestMissingArgumentError_ExitCode(t *testing.T) {
+	t.Parallel()
+	e := &MissingArgumentError{Command: "cmd", Argument: "arg"}
+	if e.ExitCode() != ExitUsageError {
+		t.Errorf("expected %d, got %d", ExitUsageError, e.ExitCode())
+	}
+}
+
 func TestInvalidCommandError_Error(t *testing.T) {
 	t.Parallel()
 	e := &InvalidCommandError{Command: "cmd", Reason: "bad"}
@@ -107,5 +123,26 @@ func TestPanicError_Error(t *testing.T) {
 	got := e.Error()
 	if got == "" {
 		t.Errorf("expected non-empty error string")
+	}
+}
+
+func TestPanicError_ExitCode(t *testing.T) {
+	t.Parallel()
+	e := &PanicError{Value: "boom"}
+	if e.ExitCode() != ExitFailure {
+		t.Errorf("expected %d, got %d", ExitFailure, e.ExitCode())
+	}
+}
+
+func TestExitConstants(t *testing.T) {
+	t.Parallel()
+	if ExitSuccess != 0 {
+		t.Errorf("expected ExitSuccess=0, got %d", ExitSuccess)
+	}
+	if ExitFailure != 1 {
+		t.Errorf("expected ExitFailure=1, got %d", ExitFailure)
+	}
+	if ExitUsageError != 2 {
+		t.Errorf("expected ExitUsageError=2, got %d", ExitUsageError)
 	}
 }

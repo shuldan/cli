@@ -45,7 +45,7 @@ func TestRegistry_Register_Duplicate(t *testing.T) {
 	}
 }
 
-func TestRegistry_Register_EmptyGroup(t *testing.T) {
+func TestRegistry_Register_EmptyGroupDefaultsToGeneral(t *testing.T) {
 	t.Parallel()
 	reg := newTestRegistry()
 	cmd := &mockCommand{name: "test", group: ""}
@@ -53,12 +53,12 @@ func TestRegistry_Register_EmptyGroup(t *testing.T) {
 	groups := reg.getGroups()
 	found := false
 	for _, g := range groups {
-		if g.Name == "general" {
+		if g.Name == groupGeneral {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("expected group 'general'")
+		t.Errorf("expected group %q", groupGeneral)
 	}
 }
 
@@ -233,5 +233,23 @@ func TestRegistry_ValidateArgs_ValidOptionalOrder(t *testing.T) {
 	err := reg.register(cmd)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+func TestRegistry_Register_MultipleGroups(t *testing.T) {
+	t.Parallel()
+	reg := newTestRegistry()
+	_ = reg.register(&mockCommand{name: "a", group: "g1"})
+	_ = reg.register(&mockCommand{name: "b", group: "g2"})
+	_ = reg.register(&mockCommand{name: "c", group: "g1"})
+	groups := reg.getGroups()
+	if len(groups) != 2 {
+		t.Fatalf("expected 2 groups, got %d", len(groups))
+	}
+	if groups[0].Name != "g1" {
+		t.Errorf("expected g1 first, got %s", groups[0].Name)
+	}
+	if len(groups[0].Commands) != 2 {
+		t.Errorf("expected 2 commands in g1, got %d", len(groups[0].Commands))
 	}
 }

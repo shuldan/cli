@@ -11,9 +11,9 @@ type helpCommand struct {
 	appName  string
 }
 
-func (h *helpCommand) Name() string        { return "help" }
+func (h *helpCommand) Name() string        { return cmdNameHelp }
 func (h *helpCommand) Description() string { return "Display help for commands" }
-func (h *helpCommand) Group() string       { return "console" }
+func (h *helpCommand) Group() string       { return groupConsole }
 
 func (h *helpCommand) Args() []Arg {
 	return []Arg{

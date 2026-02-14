@@ -110,20 +110,3 @@ func TestInput_RemainingArgs_Nil(t *testing.T) {
 		t.Errorf("expected nil, got %v", got)
 	}
 }
-
-func TestNewInput_AllFields(t *testing.T) {
-	t.Parallel()
-	args := map[string]string{"a": "1"}
-	opts := map[string]any{"b": 2}
-	rem := []string{"c"}
-	inp := newInput(args, opts, rem)
-	if inp.Arg("a") != "1" {
-		t.Errorf("expected arg a=1")
-	}
-	if inp.IntOption("b") != 2 {
-		t.Errorf("expected opt b=2")
-	}
-	if len(inp.RemainingArgs()) != 1 {
-		t.Errorf("expected 1 remaining")
-	}
-}

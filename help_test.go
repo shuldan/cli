@@ -18,14 +18,14 @@ func newHelpCmd() (*helpCommand, *registry) {
 func TestHelpCommand_Metadata(t *testing.T) {
 	t.Parallel()
 	h, _ := newHelpCmd()
-	if h.Name() != "help" {
-		t.Errorf("expected help, got %s", h.Name())
+	if h.Name() != cmdNameHelp {
+		t.Errorf("expected %s, got %s", cmdNameHelp, h.Name())
 	}
 	if h.Description() == "" {
 		t.Errorf("expected non-empty description")
 	}
-	if h.Group() != "console" {
-		t.Errorf("expected console, got %s", h.Group())
+	if h.Group() != groupConsole {
+		t.Errorf("expected %s, got %s", groupConsole, h.Group())
 	}
 	if len(h.Args()) != 1 {
 		t.Errorf("expected 1 arg, got %d", len(h.Args()))
@@ -173,8 +173,7 @@ func TestHelpCommand_PrintOptions_NoShortNoDefault(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-	out := buf.String()
-	if strings.Contains(out, ", -") {
+	if strings.Contains(buf.String(), ", -") {
 		t.Errorf("did not expect short option marker")
 	}
 }
@@ -200,47 +199,49 @@ func TestHelpCommand_ShowCommandHelp_WriteError(t *testing.T) {
 	}
 }
 
-func TestHelpCommand_PrintArgs_WriteError(t *testing.T) {
+func TestHelpCommand_PrintArgs_WriteErrors(t *testing.T) {
 	t.Parallel()
-	h, _ := newHelpCmd()
-	w := &failAfterNWriter{n: 0}
-	args := []Arg{{Name: "a", Description: "d"}}
-	err := h.printArgs(w, args)
-	if err == nil {
-		t.Errorf("expected error, got nil")
+	tests := []struct {
+		name   string
+		failAt int
+	}{
+		{"fail at header", 0},
+		{"fail at entry", 1},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			h, _ := newHelpCmd()
+			w := &failAfterNWriter{n: tc.failAt}
+			args := []Arg{{Name: "a", Description: "d"}}
+			err := h.printArgs(w, args)
+			if err == nil {
+				t.Errorf("expected error, got nil")
+			}
+		})
 	}
 }
 
-func TestHelpCommand_PrintArgs_WriteErrorOnEntry(t *testing.T) {
+func TestHelpCommand_PrintOptions_WriteErrors(t *testing.T) {
 	t.Parallel()
-	h, _ := newHelpCmd()
-	w := &failAfterNWriter{n: 1}
-	args := []Arg{{Name: "a", Description: "d"}}
-	err := h.printArgs(w, args)
-	if err == nil {
-		t.Errorf("expected error, got nil")
+	tests := []struct {
+		name   string
+		failAt int
+	}{
+		{"fail at header", 0},
+		{"fail at entry", 1},
 	}
-}
-
-func TestHelpCommand_PrintOptions_WriteError(t *testing.T) {
-	t.Parallel()
-	h, _ := newHelpCmd()
-	w := &failAfterNWriter{n: 0}
-	opts := []Option{{Name: "x", Description: "d"}}
-	err := h.printOptions(w, opts)
-	if err == nil {
-		t.Errorf("expected error, got nil")
-	}
-}
-
-func TestHelpCommand_PrintOptions_WriteErrorOnEntry(t *testing.T) {
-	t.Parallel()
-	h, _ := newHelpCmd()
-	w := &failAfterNWriter{n: 1}
-	opts := []Option{{Name: "x", Description: "d"}}
-	err := h.printOptions(w, opts)
-	if err == nil {
-		t.Errorf("expected error, got nil")
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			h, _ := newHelpCmd()
+			w := &failAfterNWriter{n: tc.failAt}
+			opts := []Option{{Name: "x", Description: "d"}}
+			err := h.printOptions(w, opts)
+			if err == nil {
+				t.Errorf("expected error, got nil")
+			}
+		})
 	}
 }
 
@@ -269,7 +270,7 @@ func TestHelpCommand_ShowGeneralHelp_GroupWriteErrors(t *testing.T) {
 	}
 }
 
-func TestHelpCommand_ShowCommandHelp_WithArgsAndOptions(t *testing.T) {
+func TestHelpCommand_ShowCommandHelp_Full(t *testing.T) {
 	t.Parallel()
 	h, reg := newHelpCmd()
 	cmd := &mockCommand{
@@ -293,7 +294,7 @@ func TestHelpCommand_ShowCommandHelp_WithArgsAndOptions(t *testing.T) {
 	}
 }
 
-func TestHelpCommand_Execute_WriterInterface(t *testing.T) {
+func TestHelpCommand_Execute_Discard(t *testing.T) {
 	t.Parallel()
 	h, _ := newHelpCmd()
 	inp := newInput(map[string]string{}, nil, nil)

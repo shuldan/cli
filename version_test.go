@@ -10,14 +10,14 @@ import (
 func TestVersionCommand_Metadata(t *testing.T) {
 	t.Parallel()
 	v := &versionCommand{appName: "myapp", appVersion: "2.0"}
-	if v.Name() != "version" {
-		t.Errorf("expected version, got %s", v.Name())
+	if v.Name() != cmdNameVersion {
+		t.Errorf("expected %s, got %s", cmdNameVersion, v.Name())
 	}
 	if v.Description() == "" {
 		t.Errorf("expected non-empty description")
 	}
-	if v.Group() != "console" {
-		t.Errorf("expected console, got %s", v.Group())
+	if v.Group() != groupConsole {
+		t.Errorf("expected %s, got %s", groupConsole, v.Group())
 	}
 	if v.Args() != nil {
 		t.Errorf("expected nil args")
@@ -27,7 +27,7 @@ func TestVersionCommand_Metadata(t *testing.T) {
 	}
 }
 
-func TestVersionCommand_Execute(t *testing.T) {
+func TestVersionCommand_Execute_Success(t *testing.T) {
 	t.Parallel()
 	v := &versionCommand{appName: "myapp", appVersion: "2.0"}
 	var buf bytes.Buffer

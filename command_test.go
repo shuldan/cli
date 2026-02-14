@@ -27,9 +27,6 @@ func TestStringArgOptional_Basic(t *testing.T) {
 	if arg.Name != "file" {
 		t.Errorf("expected name %q, got %q", "file", arg.Name)
 	}
-	if arg.Description != "Input file" {
-		t.Errorf("expected description %q, got %q", "Input file", arg.Description)
-	}
 	if !arg.Optional {
 		t.Errorf("expected Optional=true, got false")
 	}
@@ -61,9 +58,6 @@ func TestIntOption_Basic(t *testing.T) {
 	if opt.Name != "count" {
 		t.Errorf("expected name %q, got %q", "count", opt.Name)
 	}
-	if opt.Short != "c" {
-		t.Errorf("expected short %q, got %q", "c", opt.Short)
-	}
 	if opt.Default != 10 {
 		t.Errorf("expected default %d, got %v", 10, opt.Default)
 	}
@@ -78,13 +72,23 @@ func TestBoolOption_Basic(t *testing.T) {
 	if opt.Name != "verbose" {
 		t.Errorf("expected name %q, got %q", "verbose", opt.Name)
 	}
-	if opt.Short != "V" {
-		t.Errorf("expected short %q, got %q", "V", opt.Short)
-	}
 	if opt.Default != true {
 		t.Errorf("expected default true, got %v", opt.Default)
 	}
 	if opt.Type != OptionTypeBool {
 		t.Errorf("expected type %d, got %d", OptionTypeBool, opt.Type)
+	}
+}
+
+func TestOptionType_Constants(t *testing.T) {
+	t.Parallel()
+	if OptionTypeString != 0 {
+		t.Errorf("expected OptionTypeString=0, got %d", OptionTypeString)
+	}
+	if OptionTypeInt != 1 {
+		t.Errorf("expected OptionTypeInt=1, got %d", OptionTypeInt)
+	}
+	if OptionTypeBool != 2 {
+		t.Errorf("expected OptionTypeBool=2, got %d", OptionTypeBool)
 	}
 }

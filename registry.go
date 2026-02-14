@@ -47,7 +47,7 @@ func (r *registry) register(command Command) error {
 
 	group := command.Group()
 	if group == "" {
-		group = "general"
+		group = groupGeneral
 	}
 
 	if _, exists := r.groups[group]; !exists {

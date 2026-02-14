@@ -22,7 +22,7 @@ func (p *parser) parse(output io.Writer, args []string) (*parsed, error) {
 	}
 
 	if args[0] == "--version" || args[0] == "-v" {
-		return p.buildSimpleParsed("version")
+		return p.buildSimpleParsed(cmdNameVersion)
 	}
 
 	commandName := args[0]
@@ -161,9 +161,9 @@ func (p *parser) collectOptions(options []Option, pointers map[string]any) map[s
 }
 
 func (p *parser) buildHelpParsed(commandName string) (*parsed, error) {
-	helpCmd, exists := p.registry.get("help")
+	helpCmd, exists := p.registry.get(cmdNameHelp)
 	if !exists {
-		return nil, &CommandNotFoundError{Name: "help"}
+		return nil, &CommandNotFoundError{Name: cmdNameHelp}
 	}
 
 	args := make(map[string]string)
