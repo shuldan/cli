@@ -2,38 +2,47 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"io"
+	"runtime/debug"
 )
 
 type executor struct {
-	parser *parser
+	parser     *parser
+	middleware []Middleware
 }
 
-func (e *executor) execute(ctx context.Context, input io.Reader, output io.Writer, args []string) error {
+func (e *executor) execute(ctx context.Context, in io.Reader, out io.Writer, args []string) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
 	}
 
-	if err := e.withRecovery(func() error {
-		parsed, err := e.parser.parse(output, args)
+	return e.withRecovery(func() error {
+		p, err := e.parser.parse(out, args)
 		if err != nil {
 			return err
 		}
-		return parsed.Command.Execute(ctx, input, output, args)
-	}); err != nil {
-		return err
-	}
 
-	return nil
+		handler := func(ctx context.Context, in io.Reader, out io.Writer, input *Input) error {
+			return p.Command.Execute(ctx, in, out, input)
+		}
+
+		for i := len(e.middleware) - 1; i >= 0; i-- {
+			handler = e.middleware[i](handler)
+		}
+
+		return handler(ctx, in, out, p.Input)
+	})
 }
 
 func (e *executor) withRecovery(fn func() error) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("panic during command execution: %v", r)
+			err = &PanicError{
+				Value: r,
+				Stack: debug.Stack(),
+			}
 		}
 	}()
 	return fn()

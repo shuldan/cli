@@ -2,118 +2,181 @@ package cli
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"fmt"
 	"io"
-	"strconv"
-	"text/template"
 )
 
-type help struct {
+type helpCommand struct {
 	registry *registry
-	command  string
+	appName  string
 }
 
-func (h *help) Name() string {
-	return "help"
-}
+func (h *helpCommand) Name() string        { return "help" }
+func (h *helpCommand) Description() string { return "Display help for commands" }
+func (h *helpCommand) Group() string       { return "console" }
 
-func (h *help) Description() string {
-	return "Display help for commands"
-}
-
-func (h *help) Group() string {
-	return "console"
-}
-
-func (h *help) Configure(flags *flag.FlagSet) {
-	flags.StringVar(&h.command, "command", "", "Show help for specific command")
-}
-
-func (h *help) Execute(ctx context.Context, _ io.Reader, output io.Writer, _ []string) error {
-	if h.command != "" {
-		if err := h.showCommandHelp(h.command, output); err != nil {
-			return err
-		}
-		ctx.Done()
-		return nil
+func (h *helpCommand) Args() []Arg {
+	return []Arg{
+		StringArgOptional("command", "", "Command to show help for"),
 	}
-
-	if err := h.showGeneralHelp(output); err != nil {
-		return err
-	}
-	ctx.Done()
-	return nil
 }
 
-func (h *help) showGeneralHelp(output io.Writer) error {
+func (h *helpCommand) Options() []Option { return nil }
+
+func (h *helpCommand) Execute(_ context.Context, _ io.Reader, out io.Writer, input *Input) error {
+	cmdName := input.Arg("command")
+	if cmdName != "" {
+		return h.showCommandHelp(cmdName, out)
+	}
+	return h.showGeneralHelp(out)
+}
+
+func (h *helpCommand) showGeneralHelp(out io.Writer) error {
 	groups := h.registry.getGroups()
 
-	data := struct {
-		Groups map[string][]PrintableCommand
-	}{
-		Groups: make(map[string][]PrintableCommand),
+	if _, err := fmt.Fprintf(out, "%s\n\nUsage: %s <command> [options] [arguments]\n\n", h.appName, h.appName); err != nil {
+		return err
 	}
 
-	for groupName, commands := range groups {
-		longest := 0
-		for _, cmd := range commands {
-			if len(cmd.Name()) > longest {
-				longest = len(cmd.Name())
+	for _, group := range groups {
+		maxLen := 0
+		for _, cmd := range group.Commands {
+			if len(cmd.Name()) > maxLen {
+				maxLen = len(cmd.Name())
 			}
 		}
 
-		formatter := "%-" + strconv.Itoa(longest) + "s"
-		printableCommands := make([]PrintableCommand, 0, len(commands))
-
-		for _, cmd := range commands {
-			printableCommands = append(printableCommands, PrintableCommand{
-				PaddedName:  fmt.Sprintf(formatter, cmd.Name()),
-				Description: cmd.Description(),
-			})
+		if _, err := fmt.Fprintf(out, "%s:\n", group.Name); err != nil {
+			return err
 		}
 
-		data.Groups[groupName] = printableCommands
+		for _, cmd := range group.Commands {
+			if _, err := fmt.Fprintf(out, "  %-*s    %s\n", maxLen, cmd.Name(), cmd.Description()); err != nil {
+				return err
+			}
+		}
+
+		if _, err := fmt.Fprintln(out); err != nil {
+			return err
+		}
 	}
-
-	tmpl := template.New("help")
-	helpTemplate := `Usage: command [options] [arguments]
-
-{{ range $group, $commands := .Groups }}{{ $group }}:{{ range $commands }}
-  {{.PaddedName}}  {{.Description}}{{ end }}
-
-{{ end }}`
-
-	template.Must(tmpl.Parse(helpTemplate))
-
-	return tmpl.Execute(output, data)
-}
-
-func (h *help) showCommandHelp(commandName string, output io.Writer) error {
-	command, exists := h.registry.get(commandName)
-	if !exists || command == nil {
-		return errors.New("command not found")
-	}
-
-	if _, err := fmt.Fprintf(output, "%s - %s\n\n", command.Name(), command.Description()); err != nil {
-		return err
-	}
-
-	flags := flag.NewFlagSet(command.Name(), flag.ContinueOnError)
-	flags.SetOutput(output)
-	command.Configure(flags)
-
-	if _, err := fmt.Fprintf(output, "Options:\n"); err != nil {
-		return err
-	}
-
-	flags.PrintDefaults()
 
 	return nil
 }
 
-type PrintableCommand struct {
-	PaddedName  string
-	Description string
+func (h *helpCommand) showCommandHelp(cmdName string, out io.Writer) error {
+	cmd, exists := h.registry.get(cmdName)
+	if !exists {
+		return &CommandNotFoundError{Name: cmdName}
+	}
+
+	usage := h.buildUsageLine(cmd)
+
+	if _, err := fmt.Fprintf(out, "%s — %s\n\nUsage: %s\n", cmd.Name(), cmd.Description(), usage); err != nil {
+		return err
+	}
+
+	if err := h.printArgs(out, cmd.Args()); err != nil {
+		return err
+	}
+
+	if err := h.printOptions(out, cmd.Options()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *helpCommand) buildUsageLine(cmd Command) string {
+	usage := h.appName + " " + cmd.Name()
+
+	for _, arg := range cmd.Args() {
+		if arg.Optional {
+			usage += " [" + arg.Name + "]"
+		} else {
+			usage += " <" + arg.Name + ">"
+		}
+	}
+
+	for _, opt := range cmd.Options() {
+		if opt.Type == OptionTypeBool {
+			usage += " [--" + opt.Name + "]"
+		} else {
+			usage += " [--" + opt.Name + "=...]"
+		}
+	}
+
+	return usage
+}
+
+func (h *helpCommand) printArgs(out io.Writer, args []Arg) error {
+	if len(args) == 0 {
+		return nil
+	}
+
+	if _, err := fmt.Fprintf(out, "\nArguments:\n"); err != nil {
+		return err
+	}
+
+	maxLen := 0
+	for _, a := range args {
+		if len(a.Name) > maxLen {
+			maxLen = len(a.Name)
+		}
+	}
+
+	for _, a := range args {
+		desc := a.Description
+		if a.Optional && a.Default != "" {
+			desc += fmt.Sprintf(" (default: %s)", a.Default)
+		}
+		if _, err := fmt.Fprintf(out, "  %-*s    %s\n", maxLen, a.Name, desc); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (h *helpCommand) printOptions(out io.Writer, options []Option) error {
+	if len(options) == 0 {
+		return nil
+	}
+
+	if _, err := fmt.Fprintf(out, "\nOptions:\n"); err != nil {
+		return err
+	}
+
+	type entry struct {
+		label string
+		desc  string
+	}
+
+	entries := make([]entry, 0, len(options))
+	maxLen := 0
+
+	for _, opt := range options {
+		label := "--" + opt.Name
+		if opt.Short != "" {
+			label += ", -" + opt.Short
+		}
+		if len(label) > maxLen {
+			maxLen = len(label)
+		}
+
+		desc := opt.Description
+		if opt.Default != nil {
+			desc += fmt.Sprintf(" (default: %v)", opt.Default)
+		}
+
+		entries = append(entries, entry{label: label, desc: desc})
+	}
+
+	for _, e := range entries {
+		if _, err := fmt.Fprintf(out, "  %-*s    %s\n", maxLen, e.label, e.desc); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
